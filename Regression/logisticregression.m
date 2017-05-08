@@ -1,13 +1,20 @@
-function logisticregression(x,y)
+function [theta,finalCost,classifications] = logisticregression(x,y,lambda,g,dg)
+
+if nargin < 1
+    lambda = 0;
+    x = rand(2,50);
+    y = (x(1,:) + 2.*x(2,:)) > 1;
+    y = (x(2,:) > 0.3);
+end
+if nargin < 5
+    % linear by default
+    g = @(theta,x) theta'*x;
+    dg = @(theta,x) x;
+end
 
 % data
-%x = rand(2,50);
 m = size(x,2);
 mt = size(x,1);
-
-% generate labels
-%y = (x(1,:).^2 + x(2,:).^2) > 0.5;
-%y = (x(1,:) + 2.*x(2,:)) > 1;
 
 % plot data
 figure;
@@ -27,7 +34,7 @@ x_w0 = [ones(1,m); x];
 % minimisation method:
 %  1 - gradient descent
 %  2 - fminunc
-method = 1;  
+method = 2;  
 
 switch method
     
@@ -43,7 +50,7 @@ switch method
         converged = 0;
         Js = zeros(n,1);
         display('Starting gradient descent:');
-        drawskip = 0;
+        drawskip = 1;
         if drawskip > 0
             figure(10220);
             scatter(x(1,:),x(2,:),36,[y' ~y' zeros(m,1)]);
@@ -53,7 +60,7 @@ switch method
             %ylim([0 1]);
         end
         for i=1:n
-            [J,dJ] = costFunction(theta, x_w0, y);
+            [J,dJ] = costFunction(theta, lambda, g, dg, x_w0, y);
             Js(i) = J;
 
             % update
@@ -77,7 +84,7 @@ switch method
                     delete(ph);
                 end
                 ph = plot(x(1,:),db);
-                drawnow;
+                drawnow limitrate;
             end
 
             lastJ = J;
@@ -102,26 +109,39 @@ switch method
     case 2
         
         options = optimoptions(@fminunc,'GradObj','on');
-        theta = fminunc(@(t) costFunction(t,x_w0,y), theta, options);
+        [theta,finalCost] = fminunc(@(t) costFunction(t,lambda,g,dg,x_w0,y), theta, options);
 end
 
 figure;
 hold on;
-py = h(theta,x_w0) > 0.5;
+classifications = h(theta,x_w0) > 0.5;
 d = 0.5;
 db = (log(d / (1-d)) - theta(2)*x(1,:) - theta(1)) / theta(3);
 scatter(x(1,:),x(2,:),36,[y' ~y' zeros(m,1)]);
-plot(x(1,:),db);
-legend('Data', 'Fit');
+scatter(x(1,:),x(2,:),10,[classifications' ~classifications' zeros(m,1)]);
+%plot(x(1,:),db);
+%legend('Data', 'Fit');
 xlim([0 1]);
 ylim([0 1]);
 
 end
 
-function [J, dJ] = costFunction(theta, x, y)
+% calculate cost function
+% [theta] parameter vector
+% [lambda] regularisation parameter
+% [x] the training examples
+% [y] the labels
+function [J, dJ] = costFunction(theta, lambda, g, dg, x, y)
 
 m = length(y);
-h = 1 ./ (1 + exp(-theta'*x));
-J = (-1/m) * (y * log(h)' + (1 - y) * log(1 - h)');
-dJ = (-1/m) * x * ( y - h)';
+h = 1 ./ (1 + exp(-g(theta,x)));
+
+if lambda == 0
+    regularisationTerm = 0;
+else
+    regularisationTerm = (lambda / (2*m)) * sum(theta .* theta);
+end
+
+J = (-1/m) * (y * log(h)' + (1 - y) * log(1 - h)') + regularisationTerm;
+dJ = (-1/m) * dg(theta,x) * ( y - h)';
 end

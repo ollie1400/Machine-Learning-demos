@@ -1,0 +1,24 @@
+
+x = rand(2,50);
+y = (x(1,:) + 2.*x(2,:)) > 1;
+y = (x(2,:) > 0.3);
+y = (x(1,:)-0.5).^2 + (x(2,:)-0.5).^2 < 0.1;
+
+%%
+lambda = 0;
+
+% linear by default
+g = @(theta,x) theta'*x;
+dg = @(theta,x) x;
+xp = x;
+
+% make new features and more params
+%xp = [x; x(1,:).^2; x(2,:).^2];
+
+%%
+[theta,finalCost,classifications] = ...
+    logisticregression(xp,y,lambda,g,dg);
+
+display('Final cost = %.3e',finalCost);
+display('Correct classifications = %d/%d (%.2f)', ...
+    sum(classificaions == y)finalCost);
