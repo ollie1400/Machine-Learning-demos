@@ -19,6 +19,7 @@ mt = size(x,1);
 % plot data
 figure;
 scatter(x(1,:),x(2,:),36,[y' ~y' zeros(m,1)]);
+title('Input data (green = 0, red = 1)');
 
 assignin('base','x',x);
 assignin('base','y',y);
